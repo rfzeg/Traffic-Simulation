@@ -5,7 +5,6 @@
 
 /* Implementation of class "MessageQueue" */
 
-/* 
 template <typename T>
 T MessageQueue<T>::receive()
 {
@@ -20,7 +19,6 @@ void MessageQueue<T>::send(T &&msg)
     // FP.4a : The method send should use the mechanisms std::lock_guard<std::mutex> 
     // as well as _condition.notify_one() to add a new message to the queue and afterwards send a notification.
 }
-*/
 
 /* Implementation of class "TrafficLight" */
 TrafficLight::TrafficLight(){
@@ -35,7 +33,7 @@ void TrafficLight::waitForGreen()
     // Once it receives TrafficLightPhase::green, the method returns.
 }
 
-TrafficLight::TrafficLightPhase TrafficLight::getCurrentPhase()
+TrafficLightPhase TrafficLight::getCurrentPhase()
 {
     return _currentPhase;
 }
@@ -65,7 +63,7 @@ void TrafficLight::cycleThroughPhases(){
             _currentPhase = static_cast<TrafficLightPhase>(new_phase);
 
             // TO-DO: Send update message to the class `MessageQueue`
-            // to be implemented as part of assignment FP.3
+            // to be implemented as part of assignment FP.3 and FP.4b
 
             // generate next cycle duration (range was set 4 to 6 seconds)
             int cycle_duration = distribution(generator)*1000;
