@@ -16,8 +16,16 @@ T MessageQueue<T>::receive()
 template <typename T>
 void MessageQueue<T>::send(T &&msg)
 {
-    // FP.4a : The method send should use the mechanisms std::lock_guard<std::mutex> 
-    // as well as _condition.notify_one() to add a new message to the queue and afterwards send a notification.
+    // This method adds an object to the queue and then notifys the client to unblock its thread.
+
+    // perform vector modification under the lock
+    std::lock_guard<std::mutex> uLock(_mtx);
+
+    // add object to the queue transfering its ownership
+    _queue.push_back(std::move(msg));
+    std::cout << " Message " << msg << " has been sent to the queue" << std::endl;
+    // notify client to unblock a thread
+    _cnd.notify_one();
 }
 
 /* Implementation of class "TrafficLight" */
@@ -59,11 +67,10 @@ void TrafficLight::cycleThroughPhases(){
 
             // flip light: if red make it green, if green make it red
             int new_phase = abs(TrafficLight::getCurrentPhase() - 1);
-            // static_cast operator explicitly converts an int value to an enum type
-            _currentPhase = static_cast<TrafficLightPhase>(new_phase);
 
-            // TO-DO: Send update message to the class `MessageQueue`
-            // to be implemented as part of assignment FP.3 and FP.4b
+            // push each new TrafficLightPhase into _msgQ calling its send method in conjunction with move semantics
+            // static_cast operator explicitly converts int value to enum type
+            _msgQ.send(static_cast<TrafficLightPhase>(new_phase));
 
             // generate next cycle duration (range was set 4 to 6 seconds)
             int cycle_duration = distribution(generator)*1000;
