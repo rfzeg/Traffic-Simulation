@@ -8,9 +8,19 @@
 template <typename T>
 T MessageQueue<T>::receive()
 {
-    // FP.5a : The method receive should use std::unique_lock<std::mutex> and _condition.wait() 
-    // to wait for and receive new messages and pull them from the queue using move semantics. 
-    // The received object should then be returned by the receive function. 
+    // This method waits for new messages and then pulls and returns the associated object from the queue.
+
+    // perform queue modification under the lock
+    std::unique_lock<std::mutex> uLock(_mtx);
+    // wait to be notified and then awake the thread, pass unique lock to condition variable
+    _cnd.wait(uLock, [this] { return !_queue.empty(); });
+
+    // access the last element from queue and assign ownership of it to new variable 'msg'
+    T msg = std::move(_queue.back());
+    // remove the last element from queue
+    _queue.pop_back();
+
+    return msg; // will not be copied due to return value optimization (RVO) in C++
 }
 
 template <typename T>
@@ -36,9 +46,15 @@ TrafficLight::TrafficLight(){
 
 void TrafficLight::waitForGreen()
 {
-    // FP.5b : add the implementation of the method waitForGreen, in which an infinite while-loop 
-    // runs and repeatedly calls the receive function on the message queue. 
-    // Once it receives TrafficLightPhase::green, the method returns.
+    // Run an infinite loop to repeatedly call the `receive` function on the message queue.
+    // Once it receives `TrafficLightPhase::green`, the method returns.
+
+    while(true){
+        TrafficLightPhase current_phase = _msgQ.receive();
+        if(current_phase == TrafficLightPhase::green){
+            return;
+        }
+    }
 }
 
 TrafficLightPhase TrafficLight::getCurrentPhase()
