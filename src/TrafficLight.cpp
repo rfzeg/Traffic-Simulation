@@ -50,6 +50,8 @@ void TrafficLight::waitForGreen()
     // Once it receives `TrafficLightPhase::green`, the method returns.
 
     while(true){
+        // sleep at every iteration to reduce CPU usage
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
         TrafficLightPhase current_phase = _msgQ.receive();
         if(current_phase == TrafficLightPhase::green){
             return;
