@@ -73,7 +73,7 @@ void TrafficLight::simulate()
 // virtual function which is executed in a thread
 void TrafficLight::cycleThroughPhases(){
     std::default_random_engine generator;
-    std::uniform_int_distribution<int> distribution(4,6); // set range 4 to 6 seconds
+    std::uniform_int_distribution<int> distribution(4,6); // range 4 to 6 sec, includes endpoints
 
     // Record start time, initialize finish time
     auto start = std::chrono::high_resolution_clock::now();
@@ -91,7 +91,7 @@ void TrafficLight::cycleThroughPhases(){
             _msgQ.send(std::move(_currentPhase));
 
             // generate next cycle duration (range was set 4 to 6 seconds)
-            int cycle_duration = distribution(generator)*1000;
+            cycle_duration = distribution(generator);
 
             // update start time
             start = std::chrono::high_resolution_clock::now();
