@@ -1,6 +1,6 @@
 #include <iostream>
 #include <random>
-#include <chrono>  // to measure elapsed timecd build
+#include <chrono>  // to measure elapsed time
 #include "TrafficLight.h"
 
 /* Implementation of class "MessageQueue" */
@@ -28,11 +28,12 @@ void MessageQueue<T>::send(T &&msg)
 {
     // This method adds an object to the queue and then notifys the client to unblock its thread.
 
-    // perform vector modification under the lock
+    // get a lock to perform queue modification under the lock
     std::lock_guard<std::mutex> uLock(_mtx);
 
     // add object to the queue transfering its ownership
     _queue.push_back(std::move(msg));
+    // TO-DO: protect cout with shared mutex
     std::cout << " Message " << msg << " has been sent to the queue" << std::endl;
     // notify client to unblock a thread
     _cnd.notify_one();
@@ -96,7 +97,7 @@ void TrafficLight::cycleThroughPhases(){
             // update start time
             start = std::chrono::high_resolution_clock::now();
         }
-
+       // sleep at every iteration to reduce CPU usage
        std::this_thread::sleep_for(std::chrono::milliseconds(1)); // 100 milliseconds = 0.1 second
        // update finish time
        finish = std::chrono::high_resolution_clock::now();
