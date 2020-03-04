@@ -85,10 +85,10 @@ void TrafficLight::cycleThroughPhases(){
 
             // flip light: if red make it green, if green make it red
             int new_phase = abs(TrafficLight::getCurrentPhase() - 1);
-
+            // update value of _currentPhase variable, static_cast explicitly converts int value to enum type
+            _currentPhase = static_cast<TrafficLightPhase>(new_phase);
             // push each new TrafficLightPhase into _msgQ calling its send method in conjunction with move semantics
-            // static_cast operator explicitly converts int value to enum type
-            _msgQ.send(static_cast<TrafficLightPhase>(new_phase));
+            _msgQ.send(std::move(_currentPhase));
 
             // generate next cycle duration (range was set 4 to 6 seconds)
             int cycle_duration = distribution(generator)*1000;
