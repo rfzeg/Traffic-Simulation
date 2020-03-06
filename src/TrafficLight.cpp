@@ -73,7 +73,9 @@ void TrafficLight::simulate()
 
 // virtual function which is executed in a thread
 void TrafficLight::cycleThroughPhases(){
-    std::default_random_engine generator;
+    // construct a trivial random generator engine from a time-based seed:
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    std::default_random_engine generator (seed);
     std::uniform_int_distribution<int> distribution(4,6); // range 4 to 6 sec, includes endpoints
 
     // Record start time, initialize finish time
