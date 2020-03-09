@@ -89,7 +89,7 @@ void Intersection::addVehicleToQueue(std::shared_ptr<Vehicle> vehicle)
     lck.unlock();
 
     // block execution until traffic light turns green (stop vehicle entry when light is red)
-     if (_trafficLight.getCurrentPhase() == TrafficLightPhase::red) {
+     while(_trafficLight.getCurrentPhase() == TrafficLightPhase::red) {
         _trafficLight.waitForGreen();
     }
 }
