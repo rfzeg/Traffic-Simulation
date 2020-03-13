@@ -81,15 +81,14 @@ void TrafficLight::cycleThroughPhases(){
     // construct a trivial random generator engine from a time-based seed
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     std::default_random_engine generator (seed);
-    std::uniform_int_distribution<int> distribution(4,6); // range 4 to 6 sec, includes endpoints
-
-    // record start time, initialize finish time
-    auto start = std::chrono::high_resolution_clock::now();
-    auto finish = std::chrono::high_resolution_clock::now();
-    int cycle_duration = 5; // set first cycle to be 5 sec
+    std::uniform_int_distribution<int> distribution(4000,6000); // set range 4 to 6 milliseconds
+    // generate cycle duration (range set between 4000 to 6000 milliseconds)
+    int cycle_duration = distribution(generator); // set first cycle
+    // initialize time measurement
+    auto last_measurement = std::chrono::high_resolution_clock::now();
 
     while(true){
-        if (std::chrono::duration_cast<std::chrono::seconds>(finish - start).count() > cycle_duration){
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - last_measurement).count() > cycle_duration){
 
             // flip light: if red make it green, if green make it red
             int new_phase = abs(TrafficLight::getCurrentPhase() - 1);
@@ -102,11 +101,9 @@ void TrafficLight::cycleThroughPhases(){
             cycle_duration = distribution(generator);
 
             // update start time
-            start = std::chrono::high_resolution_clock::now();
+            last_measurement = std::chrono::high_resolution_clock::now();
         }
        // sleep at every iteration to reduce CPU usage
        std::this_thread::sleep_for(std::chrono::milliseconds(1)); // 100 milliseconds = 0.1 second
-       // update finish time
-       finish = std::chrono::high_resolution_clock::now();
     }
 }
