@@ -18,6 +18,7 @@ public:
     T receive();
 
 private:
+    // data structure required to store objects of type TrafficLightPhase
     std::deque<TrafficLightPhase> _queue;
     std::condition_variable _cnd;
     std::mutex _mtx;
@@ -45,6 +46,8 @@ private:
     std::condition_variable _condition;
     std::mutex _mutex;
     TrafficLightPhase _currentPhase;
+    // MessageQueue object used to push each new TrafficLightPhase into it
+    // within the while loop in TrafficLight::cycleThroughPhases()
     MessageQueue<TrafficLightPhase> _msgQ;
 };
 

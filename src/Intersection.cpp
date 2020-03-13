@@ -27,13 +27,16 @@ void WaitingVehicles::pushBack(std::shared_ptr<Vehicle> vehicle, std::promise<vo
 
 void WaitingVehicles::permitEntryToFirstInQueue()
 {
+    // Implements part of the message exchange between threads
+    // Sets the promise as 'ready'  
+
     std::lock_guard<std::mutex> lock(_mutex);
 
     // get entries from the front of both queues
     auto firstPromise = _promises.begin();
     auto firstVehicle = _vehicles.begin();
 
-    // fulfill promise and send signal back that permission to enter has been granted
+    // fulfill promise and sets the promise as 'ready' (true), indicating that permission to enter has been granted
     firstPromise->set_value();
 
     // remove front elements from both queues
@@ -72,23 +75,32 @@ std::vector<std::shared_ptr<Street>> Intersection::queryStreets(std::shared_ptr<
 // adds a new vehicle to the queue and returns once the vehicle is allowed to enter
 void Intersection::addVehicleToQueue(std::shared_ptr<Vehicle> vehicle)
 {
+    // method that grants permission to vehicle to enter an intersection
+    // blocks the execution of Vehicle::drive() until the traffic light turns green
+
     // protect cout with mutex shared by all traffic objects
     std::unique_lock<std::mutex> lck(_mtx);
     std::cout << "Intersection #" << _id << "::addVehicleToQueue: thread id = " << std::this_thread::get_id() << std::endl;
     lck.unlock();
 
-    // add new vehicle to the end of the waiting line
+    /* implement information exchange with vehicle queue (which run in a separate thread) */
+
+    // init objects required to add vehicle the waiting line
+    // init promise object required to have an object to which to provide a result to
     std::promise<void> prmsVehicleAllowedToEnter;
+    // init future object required to read results of promise
     std::future<void> ftrVehicleAllowedToEnter = prmsVehicleAllowedToEnter.get_future();
+    // add new vehicle and promise to the end of the _vehicles and _promises vectors part of the WaitingVehicles class
+    // WaitingVehicles::permitEntryToFirstInQueue() later erases the here added vehicle and promise from those vectors
     _waitingVehicles.pushBack(vehicle, std::move(prmsVehicleAllowedToEnter));
 
-    // wait until the vehicle is allowed to enter
+    // pause the execution until the future is set as 'ready' (true) by WaitingVehicles::permitEntryToFirstInQueue()
     ftrVehicleAllowedToEnter.wait();
     lck.lock();
     std::cout << "Intersection #" << _id << ": Vehicle #" << vehicle->getID() << " is granted entry." << std::endl;
     lck.unlock();
 
-    // block execution until traffic light turns green (stop vehicle entry when light is red)
+    // pause the execution of Vehicle::drive() until traffic light turns green (stop vehicle entry when light is red)
      while(_trafficLight.getCurrentPhase() == TrafficLightPhase::red) {
         _trafficLight.waitForGreen();
     }
@@ -111,7 +123,8 @@ void Intersection::setIsBlocked(bool isBlocked)
 // virtual function which is executed in a thread
 void Intersection::simulate() // using threads + promises/futures + exceptions
 {
-    // start the simulation of TrafficLight
+    // start the simulation of _trafficLight object
+    // which toggles the current phase of the traffic light between red and green
     _trafficLight.simulate();
 
     // launch vehicle queue processing in a thread

@@ -73,13 +73,24 @@ void Vehicle::drive()
             yv = y1 + completion * dy;
             this->setPosition(xv, yv);
 
-            // check wether halting position in front of destination has been reached
+            // check whether halting position in front of destination has been reached
             if (completion >= 0.9 && !hasEnteredIntersection)
             {
-                // request entry to the current intersection (using async)
+                /* request entry to the current intersection (using async) */
+
+                // init a future object required to store the return type of the promise object that async automatically creates
+                // async also automatically creates a thread and passes the promise object to the thread
+
+                // In this implementation, async takes a reference to the method Intersection::addVehicleToQueue,
+                // the object _currDestination and a shared pointer to this using the get_shared_this() function
+                // Once the execution of Intersection::addVehicleToQueue is completed
+                // std::async fulfills the promise and sets the promise as 'ready' (true)
+                // indicating that permission to enter has been granted
+
                 auto ftrEntryGranted = std::async(&Intersection::addVehicleToQueue, _currDestination, get_shared_this());
 
-                // wait until entry has been granted
+	            // wait (block the execution) until the future is set as 'ready' (true) by async (entry has been granted)
+                // note: get() cannot be called several times on the same future (unlike wait() which can)
                 ftrEntryGranted.get();
 
                 // slow down and set intersection flag

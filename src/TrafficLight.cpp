@@ -8,16 +8,16 @@
 template <typename T>
 T MessageQueue<T>::receive()
 {
-    // This method waits for new messages and then pulls and returns the associated object from the queue.
+    // This method waits for new objects in the queue and then pulls and returns the last object in it
 
     // perform queue modification under the lock
     std::unique_lock<std::mutex> uLock(_mtx);
-    // wait to be notified and then awake the thread, pass unique lock to condition variable
+    // wait until the queue is not empty and then awake the thread, pass unique lock to condition variable
     _cnd.wait(uLock, [this] { return !_queue.empty(); });
 
-    // access the last element from queue and assign ownership of it to new variable 'msg'
+    // access the last element (traffic light phase) in the queue and assign ownership of it to new variable 'msg'
     T msg = std::move(_queue.back());
-    // remove the last element from queue
+    // remove the last element (traffic light phase) from the queue
     _queue.pop_back();
 
     return msg; // will not be copied due to return value optimization (RVO) in C++
@@ -35,7 +35,7 @@ void MessageQueue<T>::send(T &&msg)
     _queue.push_back(std::move(msg));
     // TO-DO: protect cout with shared mutex
     std::cout << " Message " << msg << " has been sent to the queue" << std::endl;
-    // notify client to unblock a thread
+    // notify client to unblock a thread after having added an object to the queue
     _cnd.notify_one();
 }
 
@@ -47,8 +47,8 @@ TrafficLight::TrafficLight(){
 
 void TrafficLight::waitForGreen()
 {
-    // Run an infinite loop to repeatedly call the `receive` function on the message queue.
-    // Once it receives `TrafficLightPhase::green`, the method returns.
+    // Run an infinite loop to repeatedly call the `receive` function on the MessageQueue object _msgQ
+    // Once a `TrafficLightPhase::green` object is received it exits the loop and the code execution continues
 
     while(true){
         // sleep at every iteration to reduce CPU usage
@@ -68,17 +68,22 @@ TrafficLightPhase TrafficLight::getCurrentPhase()
 
 void TrafficLight::simulate()
 {
+    // called from Intersection::simulate()
+    // this method starts the cycleThroughPhases() method in a separated thread
     threads.emplace_back(std::thread(&TrafficLight::cycleThroughPhases, this));
 }
 
 // virtual function which is executed in a thread
 void TrafficLight::cycleThroughPhases(){
-    // construct a trivial random generator engine from a time-based seed:
+    // Implements an infinite loop that measures the time between two loop cycles
+    // and toggles the current phase of the traffic light between red and green
+
+    // construct a trivial random generator engine from a time-based seed
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     std::default_random_engine generator (seed);
     std::uniform_int_distribution<int> distribution(4,6); // range 4 to 6 sec, includes endpoints
 
-    // Record start time, initialize finish time
+    // record start time, initialize finish time
     auto start = std::chrono::high_resolution_clock::now();
     auto finish = std::chrono::high_resolution_clock::now();
     int cycle_duration = 5; // set first cycle to be 5 sec

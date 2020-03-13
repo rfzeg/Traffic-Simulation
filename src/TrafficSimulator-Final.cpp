@@ -123,12 +123,12 @@ int main()
 
     /* PART 2 : simulate traffic objects */
 
-    // simulate intersection
+    // start the simulation of all intersections, this will spawn each intersection's vehicle queue process in a new thread
     std::for_each(intersections.begin(), intersections.end(), [](std::shared_ptr<Intersection> &i) {
         i->simulate();
     });
 
-    // simulate vehicles
+    // start the simulation of all vehicles, this will spawn each vehicle's drive function in a separated thread
     std::for_each(vehicles.begin(), vehicles.end(), [](std::shared_ptr<Vehicle> &v) {
         v->simulate();
     });
